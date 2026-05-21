@@ -1,8 +1,9 @@
 {
   "version": 2,
-  "functions": {
-    "index.js": {
-      "runtime": "edge"
+  "builds": [
+    {
+      "src": "index.js",
+      "use": "@vercel/edge"
     }
-  }
+  ]
 }
