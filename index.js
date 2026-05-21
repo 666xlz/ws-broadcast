@@ -3,24 +3,26 @@ const clients = new Set();
 export default {
   async fetch(request) {
     if (request.headers.get("upgrade") !== "websocket") {
-      return new Response("WebSocket only", { status: 400 });
+      return new Response("Not found", { status: 404 });
     }
 
-    const [client, server] = Object.values(new WebSocketPair());
-    server.accept();
-    clients.add(server);
+    const { socket, response } = Deno.upgradeWebSocket(request);
+    clients.add(socket);
 
-    server.onmessage = (e) => {
-      clients.forEach(c => {
-        if (c.readyState === 1) c.send(e.data);
-      });
+    socket.onmessage = (e) => {
+      for (const client of clients) {
+        if (client.readyState === 1) client.send(e.data);
+      }
     };
 
-    server.onclose = () => clients.delete(server);
+    socket.onclose = () => {
+      clients.delete(socket);
+    };
 
-    return new Response(null, {
-      status: 101,
-      webSocket: client
-    });
+    socket.onerror = () => {
+      clients.delete(socket);
+    };
+
+    return response;
   }
 };
